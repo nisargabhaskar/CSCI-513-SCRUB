@@ -1,6 +1,4 @@
-import math
 from typing import Tuple
-
 
 Coord = Tuple[int, int]
 
@@ -10,8 +8,5 @@ def in_bounds(pos, rows, cols):
     r, c = pos
     return 0 <= r < rows and 0 <= c < cols
 
-def obstacle(pos, grid):
-    return grid.get(pos) == -1  # assuming -1 indicates an obstacle
-
-def euclidean(a: Coord, b: Coord):
-    return math.dist(a, b)
+def manhattan(a: Coord, b: Coord) -> int:
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])

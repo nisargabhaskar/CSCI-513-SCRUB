@@ -1,6 +1,6 @@
 import heapq
-from typing import Tuple, Optional, Dict, Set
-from utils import euclidean
+from typing import Tuple, Optional, Dict, Set, List
+from utils import manhattan
 
 Coord = Tuple[int, int]
 
@@ -11,9 +11,7 @@ class _Cell:
         self.h = 0
         self.f = float('inf')
 
-
-def weighted_a_star(grid, start: Coord, goal: Coord):
-
+def a_star(grid, start: Coord, goal: Coord):
     open_heap = []
     cell_info: Dict[Coord, _Cell] = {}
 
@@ -25,9 +23,7 @@ def weighted_a_star(grid, start: Coord, goal: Coord):
         cell.parent = parent
         heapq.heappush(open_heap, (cell.f, pos))
 
-    start_h = euclidean(start, goal)
-    push(start, 0.0, start_h, None)
-
+    push(start, 0.0, manhattan(start, goal), None)
     closed: Set[Coord] = set()
 
     while open_heap:
@@ -48,21 +44,16 @@ def weighted_a_star(grid, start: Coord, goal: Coord):
         for nb in grid.neighbors(current):
             if nb in closed:
                 continue
-
-            step_cost = 1.0
-
-            g_new = cell_info[current].g + step_cost
-            h_new = euclidean(nb, goal)
-            f_new = g_new + h_new
-
+            g_new = cell_info[current].g + 1
+            h_new = manhattan(nb, goal)
             info = cell_info.get(nb)
             if info is None or g_new < info.g:
                 cell = cell_info.setdefault(nb, _Cell())
                 cell.g = g_new
                 cell.h = h_new
-                cell.f = f_new
+                cell.f = g_new + h_new
                 cell.parent = current
-                heapq.heappush(open_heap, (f_new, nb))
+                heapq.heappush(open_heap, (cell.f, nb))
 
     return None
 
@@ -71,7 +62,7 @@ def dijkstra_shortest_path(grid, start: Coord, goal: Coord, visited: Optional[Se
     pq = []
     heapq.heappush(pq, (0, start))
     came_from: Dict[Coord, Optional[Coord]] = {start: None}
-    cost_so_far: Dict[Coord, float] = {start: 0}
+    cost_so_far: Dict[Coord, int] = {start: 0}
 
     while pq:
         _, current = heapq.heappop(pq)
@@ -95,9 +86,7 @@ def dijkstra_shortest_path(grid, start: Coord, goal: Coord, visited: Optional[Se
 
     return None
 
-
-def choose_return_path(grid, current: Coord, start: Coord):
-
+def choose_return_path_to_dump(grid, current: Coord, trash_bin: Coord):
     zero_cells = list(grid.zero_cells())
     if not zero_cells:
         return None
@@ -109,11 +98,11 @@ def choose_return_path(grid, current: Coord, start: Coord):
 
     for z in zero_cells:
         # path from current to z 
-        p1 = dijkstra_shortest_path(grid, current, z, visited=None)
+        p1 = dijkstra_shortest_path(grid, current, z)
         if p1 is None:
             continue
         # from z to start only using the cells with zero value
-        p2 = dijkstra_shortest_path(grid, z, start, visited=zeros_set)
+        p2 = dijkstra_shortest_path(grid, z, trash_bin, visited=zeros_set)
         if p2 is None:
             continue
         total = (len(p1) - 1) + (len(p2) - 1)
